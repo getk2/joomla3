@@ -1,8 +1,8 @@
-# Joomla 3.x with ELTS &amp; PHP 8.3 patches
+# Joomla 3.x with ELTS &amp; PHP 8.x patches
 
 This is work in progress.
 
-Once this distribution is fully patched with current ELTS & PHP 8.3+ patches, we will start releasing ready to install packages.
+Once this distribution is fully patched with current ELTS & PHP 8.x patches, we will start releasing ready to install packages.
 
 So if you're interested in using this distribution, keep an eye on this repo or follow us on X at: httpx://x.com/joomlaworks
 
