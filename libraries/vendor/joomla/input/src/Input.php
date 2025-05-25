@@ -392,8 +392,11 @@ class Input implements \Serializable, \Countable
 	 */
 	public function unserialize($input)
 	{
-		// Unserialize the options, data, and inputs.
-		list($this->options, $this->data, $this->inputs) = unserialize($input);
+		// Unserialize the options, data, and inputs with allowed_classes for PHP 8.3 compatibility.
+		list($this->options, $this->data, $this->inputs) = unserialize(
+			$input,
+			['allowed_classes' => true] // Allow all classes to be unserialized.
+		);
 
 		// Load the filter.
 		if (isset($this->options['filter']))

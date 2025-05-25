@@ -222,7 +222,7 @@ class JDatabaseDriverMysqli extends JDatabaseDriver
 					}
 					mysqli_close($this->connection);
 				}
-			} catch (Error $e) {
+			} catch (\Throwable $e) {
 				// Connection is already closed, do nothing
 			}
 		}
@@ -743,7 +743,10 @@ class JDatabaseDriverMysqli extends JDatabaseDriver
 		// Which charset should I use, plain utf8 or multibyte utf8mb4?
 		$charset = $this->utf8mb4 ? 'utf8mb4' : 'utf8';
 
-		$result = @$this->connection->set_charset($charset);
+		$result = $this->connection->set_charset($charset);
+		if (!$result) {
+			throw new RuntimeException('Failed to set charset: ' . $this->connection->error);
+		}
 
 		/**
 		 * If I could not set the utf8mb4 charset then the server doesn't support utf8mb4 despite claiming otherwise.
@@ -940,15 +943,26 @@ class JDatabaseDriverMysqli extends JDatabaseDriver
 	 */
 	private function hasProfiling()
 	{
-		try
-		{
-			$res = mysqli_query($this->connection, "SHOW VARIABLES LIKE 'have_profiling'");
-			$row = mysqli_fetch_assoc($res);
-
-			return isset($row);
+		if (!$this->connected()) {
+			return false;
 		}
-		catch (Exception $e)
-		{
+
+		try {
+			$res = mysqli_query($this->connection, "SHOW VARIABLES LIKE 'have_profiling'");
+
+			if ($res === false) {
+				// Query failed, profiling status cannot be determined or is unavailable
+				return false;
+			}
+
+			$row = mysqli_fetch_assoc($res);
+			mysqli_free_result($res);
+
+			// The 'have_profiling' variable can have Value 'YES', 'NO', or 'DISABLED'.
+			// We need to ensure it's 'YES' for profiling to be truly available.
+			return (isset($row['Value']) && strtoupper((string) $row['Value']) === 'YES');
+		} catch (\Throwable $e) {
+			// Catch any unexpected errors during the process
 			return false;
 		}
 	}
@@ -962,15 +976,24 @@ class JDatabaseDriverMysqli extends JDatabaseDriver
 	 */
 	private function hasQueryCacheEnabled()
 	{
-		try
-		{
-			$res = mysqli_query($this->connection, "SHOW VARIABLES LIKE 'query_cache_type'");
-			$row = mysqli_fetch_assoc($res);
-
-			return isset($row['Value']) && $row['Value'] === 'ON';
+		if (!$this->connected()) {
+			return false;
 		}
-		catch (Exception $e)
-		{
+
+		try {
+			$res = mysqli_query($this->connection, "SHOW VARIABLES LIKE 'query_cache_type'");
+
+			if ($res === false) {
+				// Query failed, query cache status cannot be determined or is unavailable
+				return false;
+			}
+
+			$row = mysqli_fetch_assoc($res);
+			mysqli_free_result($res);
+
+			return (isset($row['Value']) && strtoupper((string) $row['Value']) === 'ON');
+		} catch (\Throwable $e) {
+			// Catch any unexpected errors during the process
 			return false;
 		}
 	}
